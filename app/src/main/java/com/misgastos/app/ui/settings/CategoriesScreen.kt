@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
@@ -95,7 +96,7 @@ fun CategoriesScreen(onBack: () -> Unit) {
                 }
             }
 
-            androidx.compose.foundation.lazy.items(state.categories, key = { it.id }) { category ->
+            items(state.categories, key = { it.id }) { category ->
                 val isExpanded = expanded.contains(category.id)
                 val establishments = state.establishmentsByCategory[category.id].orEmpty()
 
