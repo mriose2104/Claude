@@ -158,12 +158,14 @@ fun DashboardScreen(
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                 KpiCard(
                     title = "PROMEDIO SEMANAL",
-                    value = CurrencyFormatter.format(state.selectedStats.averageDaily * 7),
+                    value = CurrencyFormatter.format(state.weeklyAverage),
+                    subtitle = "Basado en todo tu historial",
                     modifier = Modifier.weight(1f)
                 )
                 KpiCard(
                     title = "PROMEDIO MENSUAL",
-                    value = CurrencyFormatter.format(state.selectedStats.averageDaily * 30),
+                    value = CurrencyFormatter.format(state.monthlyAverage),
+                    subtitle = "Basado en todo tu historial",
                     modifier = Modifier.weight(1f)
                 )
             }

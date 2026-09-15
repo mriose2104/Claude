@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.misgastos.app.data.repository.BudgetRepository
 import com.misgastos.app.data.repository.ExpenseRepository
+import com.misgastos.app.domain.model.DateRange
 import com.misgastos.app.domain.model.DateRangeFilter
 import com.misgastos.app.domain.model.PeriodComparison
 import com.misgastos.app.domain.model.PeriodStats
@@ -14,6 +15,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 data class DashboardUiState(
@@ -26,7 +28,11 @@ data class DashboardUiState(
     val selectedStats: PeriodStats = PeriodStats.empty(DateRangeUtils.resolve(DateRangeFilter.ThisMonth)),
     val comparison: PeriodComparison? = null,
     val monthlyBudget: Double = 0.0,
-    val totalExpenseCount: Int = 0
+    val totalExpenseCount: Int = 0,
+    // These reflect your whole spending history (not the period filter above), so switching
+    // filters like "Hoy" doesn't distort them by projecting a single day's total forward.
+    val weeklyAverage: Double = 0.0,
+    val monthlyAverage: Double = 0.0
 )
 
 class DashboardViewModel(
@@ -66,6 +72,14 @@ class DashboardViewModel(
     private val budgetFlow = budgetRepository.observeMonthlyBudget()
     private val countFlow = expenseRepository.observeCount()
 
+    // All-time daily pace, used to derive the weekly/monthly average cards below —
+    // independent of whichever quick filter is selected above.
+    private val averagesFlow = expenseRepository.observeFirstExpenseDate()
+        .flatMapLatest { firstDate ->
+            expenseRepository.observeStats(DateRange(firstDate ?: today, today))
+        }
+        .map { allTimeStats -> Averages(allTimeStats.averageDaily * 7, allTimeStats.averageDaily * 30) }
+
     private val partialState = combine(
         quickTotals, selectedFilter, selectedStatsFlow, comparisonFlow, budgetFlow
     ) { quick, filter, stats, comparison, budget ->
@@ -82,8 +96,8 @@ class DashboardViewModel(
         )
     }
 
-    val uiState: StateFlow<DashboardUiState> = combine(partialState, countFlow) { state, count ->
-        state.copy(totalExpenseCount = count)
+    val uiState: StateFlow<DashboardUiState> = combine(partialState, countFlow, averagesFlow) { state, count, averages ->
+        state.copy(totalExpenseCount = count, weeklyAverage = averages.weekly, monthlyAverage = averages.monthly)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -91,4 +105,5 @@ class DashboardViewModel(
     )
 
     private data class QuickTotals(val today: Double, val week: Double, val month: Double, val year: Double)
+    private data class Averages(val weekly: Double, val monthly: Double)
 }
