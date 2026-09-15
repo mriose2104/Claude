@@ -10,6 +10,7 @@ import com.misgastos.app.domain.model.PeriodComparison
 import com.misgastos.app.domain.model.PeriodStats
 import com.misgastos.app.domain.util.DateRangeUtils
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -72,13 +73,20 @@ class DashboardViewModel(
     private val budgetFlow = budgetRepository.observeMonthlyBudget()
     private val countFlow = expenseRepository.observeCount()
 
-    // All-time daily pace, used to derive the weekly/monthly average cards below —
-    // independent of whichever quick filter is selected above.
+    // Total spent since your first expense, divided by the real number of weeks/months elapsed
+    // since then — not a projection of a single day's spending, so it starts out accurate
+    // (e.g. one day of history simply shows what you've spent so far) and settles into a real
+    // average as more days accumulate. Independent of whichever quick filter is selected above.
     private val averagesFlow = expenseRepository.observeFirstExpenseDate()
         .flatMapLatest { firstDate ->
-            expenseRepository.observeStats(DateRange(firstDate ?: today, today))
+            val start = firstDate ?: today
+            expenseRepository.observeStats(DateRange(start, today)).map { allTimeStats ->
+                val daysElapsed = ChronoUnit.DAYS.between(start, today) + 1
+                val weeksElapsed = ((daysElapsed + 6) / 7).coerceAtLeast(1)
+                val monthsElapsed = (ChronoUnit.MONTHS.between(start, today) + 1).coerceAtLeast(1)
+                Averages(allTimeStats.total / weeksElapsed, allTimeStats.total / monthsElapsed)
+            }
         }
-        .map { allTimeStats -> Averages(allTimeStats.averageDaily * 7, allTimeStats.averageDaily * 30) }
 
     private val partialState = combine(
         quickTotals, selectedFilter, selectedStatsFlow, comparisonFlow, budgetFlow
