@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.misgastos.app.domain.model.DateRangeFilter
+import com.misgastos.app.domain.model.quickDateRangeFilters
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -41,7 +42,7 @@ fun DateFilterRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp)
     ) {
-        items(DateRangeFilter.quickFilters) { filter ->
+        items(quickDateRangeFilters) { filter ->
             FilterChip(
                 selected = selected == filter,
                 onClick = { onSelected(filter) },
