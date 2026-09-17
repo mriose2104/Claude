@@ -141,12 +141,6 @@ fun DashboardScreen(
         }
 
         item {
-            KpiCard(
-                title = "PROMEDIO DIARIO",
-                value = CurrencyFormatter.format(state.selectedStats.averageDaily)
-            )
-        }
-        item {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                 KpiCard(
                     title = "CATEGORÍA TOP",
