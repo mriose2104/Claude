@@ -141,34 +141,10 @@ fun DashboardScreen(
         }
 
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                KpiCard(
-                    title = "PROMEDIO DIARIO",
-                    value = CurrencyFormatter.format(state.selectedStats.averageDaily),
-                    modifier = Modifier.weight(1f)
-                )
-                KpiCard(
-                    title = "MOVIMIENTOS",
-                    value = state.selectedStats.count.toString(),
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        }
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                KpiCard(
-                    title = "PROMEDIO SEMANAL",
-                    value = CurrencyFormatter.format(state.weeklyAverage),
-                    subtitle = "Basado en todo tu historial",
-                    modifier = Modifier.weight(1f)
-                )
-                KpiCard(
-                    title = "PROMEDIO MENSUAL",
-                    value = CurrencyFormatter.format(state.monthlyAverage),
-                    subtitle = "Basado en todo tu historial",
-                    modifier = Modifier.weight(1f)
-                )
-            }
+            KpiCard(
+                title = "PROMEDIO DIARIO",
+                value = CurrencyFormatter.format(state.selectedStats.averageDaily)
+            )
         }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
