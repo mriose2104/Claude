@@ -54,9 +54,14 @@ sc.exe failure $ServiceName reset= 86400 actions= restart/5000/restart/5000/rest
 $dataDir = Join-Path $env:ProgramData "AppUsageMonitor"
 New-Item -ItemType Directory -Path $dataDir -Force | Out-Null
 try {
+    # Se usa el SID conocido del grupo "Usuarios" (S-1-5-32-545) en vez del
+    # nombre de cuenta como texto: el nombre localizado de ese grupo varia
+    # segun el idioma de Windows y puede fallar al traducirse.
+    $usersSid = New-Object System.Security.Principal.SecurityIdentifier(
+        [System.Security.Principal.WellKnownSidType]::BuiltinUsersSid, $null)
     $acl = Get-Acl $dataDir
     $rule = New-Object System.Security.AccessControl.FileSystemAccessRule(
-        "BUILTIN\Users", "Modify", "ContainerInherit,ObjectInherit", "None", "Allow")
+        $usersSid, "Modify", "ContainerInherit,ObjectInherit", "None", "Allow")
     $acl.AddAccessRule($rule)
     Set-Acl -Path $dataDir -AclObject $acl
 } catch {
