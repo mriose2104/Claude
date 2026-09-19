@@ -1,6 +1,17 @@
 using AppUsageMonitor.Database;
 using AppUsageMonitor.MonitorService;
 
+// Evita que se acumulen varias instancias detectando y guardando actividad
+// por separado (por ejemplo si alguien abre el .exe a mano mientras la
+// tarea programada ya tiene una corriendo). "Local\" limita el mutex a la
+// sesion actual: en un equipo con varias sesiones (Escritorio Remoto) cada
+// una puede tener la suya.
+using var singleInstanceMutex = new Mutex(true, "Local\\AppUsageMonitor.MonitorService.SingleInstance", out var isNewInstance);
+if (!isNewInstance)
+{
+    return;
+}
+
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services.AddSingleton<IUsageRepository>(_ =>
