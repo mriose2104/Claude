@@ -59,7 +59,7 @@ public sealed class FileLoggerProvider : ILoggerProvider
             {
                 try
                 {
-                    File.AppendAllText(_filePath, line + Environment.NewLine);
+                    File.AppendAllText(_filePath, line + Environment.NewLine, System.Text.Encoding.UTF8);
                 }
                 catch
                 {
