@@ -152,7 +152,15 @@ public class ProcessMonitor
             return;
         }
 
-        _logger.LogInformation("Cierre: {App} duracion {Duracion}s", session.AppName, duracion);
+        _logger.LogInformation("Cierre: {App} duracion {Duracion}", session.AppName, FormatMinutos(duracion));
+    }
+
+    private static string FormatMinutos(long segundos)
+    {
+        if (segundos < 60) return $"{segundos}s";
+        var minutos = segundos / 60;
+        var resto = segundos % 60;
+        return resto == 0 ? $"{minutos}m" : $"{minutos}m {resto}s";
     }
 
     /// <summary>Se llama al detener el servicio para cerrar prolijamente todo lo que quedaba abierto.</summary>
