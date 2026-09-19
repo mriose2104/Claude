@@ -40,9 +40,33 @@ function Publish-Project($projectRelativePath, $outputSubfolder) {
     }
 }
 
-Publish-Project "src\AppUsageMonitor.MonitorService\AppUsageMonitor.MonitorService.csproj" "MonitorService"
-Publish-Project "src\AppUsageMonitor.Dashboard\AppUsageMonitor.Dashboard.csproj" "Dashboard"
+# El monitor puede estar corriendo (arrancado por la tarea programada, o
+# revivido por su disparador vigilante) y bloquear su propio .exe/.dll,
+# haciendo fallar la publicacion. Se detiene antes de publicar y se vuelve
+# a arrancar al final, sin importar si la publicacion tuvo exito o no.
+$taskName = "AppUsageMonitorTask"
+$task = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+$reiniciarTarea = $false
+if ($task) {
+    $reiniciarTarea = ($task.State -eq "Running")
+    if ($reiniciarTarea) {
+        Write-Host "==> Deteniendo temporalmente la tarea '$taskName' para poder publicar..." -ForegroundColor Yellow
+        Stop-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+    }
+}
+Get-Process -Name "AppUsageMonitor.MonitorService" -ErrorAction SilentlyContinue | Stop-Process -Force
+
+try {
+    Publish-Project "src\AppUsageMonitor.MonitorService\AppUsageMonitor.MonitorService.csproj" "MonitorService"
+    Publish-Project "src\AppUsageMonitor.Dashboard\AppUsageMonitor.Dashboard.csproj" "Dashboard"
+}
+finally {
+    if ($reiniciarTarea) {
+        Write-Host "==> Reiniciando la tarea '$taskName'..." -ForegroundColor Yellow
+        Start-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+    }
+}
 
 Write-Host ""
 Write-Host "Publicacion completa en: $outDir" -ForegroundColor Green
-Write-Host "Siguiente paso: ejecutar install-service.ps1 como Administrador." -ForegroundColor Green
+Write-Host "Siguiente paso: ejecutar install-monitor-task.ps1 como Administrador (si aun no esta instalado)." -ForegroundColor Green
