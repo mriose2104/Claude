@@ -102,11 +102,15 @@ public partial class MainWindow : Window
             Inicio = r.Inicio.ToString("HH:mm"),
             Fin = r.Fin?.ToString("HH:mm") ?? "-",
             Duracion = SecondsToDurationConverter.FormatDuration(ReportService.DuracionEfectivaSegundos(r)),
+            DuracionSegundos = ReportService.DuracionEfectivaSegundos(r),
             Estado = r.Estado,
         }).ToList();
 
         var totalSegundos = _ultimoResultado.Sum(ReportService.DuracionEfectivaSegundos);
         TotalFiltradoText.Text = $"Total: {_ultimoResultado.Count} sesiones, {SecondsToDurationConverter.FormatDuration(totalSegundos)}";
+
+        var porPrograma = _reportService.GetTopAplicaciones(filtro, top: 20);
+        HistorialPorProgramaChart.SetData(porPrograma);
     }
 
     private void RefreshButton_Click(object sender, RoutedEventArgs e) => RefreshData();

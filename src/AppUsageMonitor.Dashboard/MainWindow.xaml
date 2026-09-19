@@ -151,6 +151,17 @@
                         </Grid>
                     </Border>
 
+                    <!-- Desglose por programa segun el filtro actual -->
+                    <Border DockPanel.Dock="Bottom" Style="{StaticResource CardStyle}" MaxHeight="190">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top" Text="Duracion por programa (segun filtro actual)" FontWeight="Bold"
+                                       FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,8" />
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <controls:BarChartControl x:Name="HistorialPorProgramaChart" />
+                            </ScrollViewer>
+                        </DockPanel>
+                    </Border>
+
                     <!-- Tabla -->
                     <Border Style="{StaticResource CardStyle}">
                         <DataGrid x:Name="HistorialGrid" AutoGenerateColumns="False" IsReadOnly="True"
@@ -163,7 +174,7 @@
                                 <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha}" Width="100" />
                                 <DataGridTextColumn Header="Inicio" Binding="{Binding Inicio}" Width="80" />
                                 <DataGridTextColumn Header="Fin" Binding="{Binding Fin}" Width="80" />
-                                <DataGridTextColumn Header="Duracion" Binding="{Binding Duracion}" Width="90" />
+                                <DataGridTextColumn Header="Duracion" Binding="{Binding Duracion}" SortMemberPath="DuracionSegundos" Width="90" />
                                 <DataGridTextColumn Header="Estado" Binding="{Binding Estado}" Width="*" />
                             </DataGrid.Columns>
                         </DataGrid>
