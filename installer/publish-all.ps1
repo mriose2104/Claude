@@ -56,6 +56,16 @@ if ($task) {
 }
 Get-Process -Name "AppUsageMonitor.MonitorService" -ErrorAction SilentlyContinue | Stop-Process -Force
 
+# El Dashboard tambien bloquea su propio .exe/.dll si quedo abierto (incluso
+# minimizado a la bandeja). A diferencia del monitor, no se vuelve a abrir
+# solo al terminar: hay que abrirlo a mano despues para probar la version
+# nueva.
+$dashboardCorriendo = Get-Process -Name "AppUsageMonitor.Dashboard" -ErrorAction SilentlyContinue
+if ($dashboardCorriendo) {
+    Write-Host "==> Cerrando el Dashboard (seguia abierto/en la bandeja) para poder publicar..." -ForegroundColor Yellow
+    $dashboardCorriendo | Stop-Process -Force
+}
+
 try {
     Publish-Project "src\AppUsageMonitor.MonitorService\AppUsageMonitor.MonitorService.csproj" "MonitorService"
     Publish-Project "src\AppUsageMonitor.Dashboard\AppUsageMonitor.Dashboard.csproj" "Dashboard"
@@ -69,4 +79,7 @@ finally {
 
 Write-Host ""
 Write-Host "Publicacion completa en: $outDir" -ForegroundColor Green
+if ($dashboardCorriendo) {
+    Write-Host "El Dashboard se cerro para poder publicar: abrelo de nuevo para probar la version nueva." -ForegroundColor Yellow
+}
 Write-Host "Siguiente paso: ejecutar install-monitor-task.ps1 como Administrador (si aun no esta instalado)." -ForegroundColor Green
