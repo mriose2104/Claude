@@ -16,6 +16,21 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // Sin esto, cualquier excepcion no manejada cierra toda la app en
+        // silencio (incluido el icono de la bandeja) sin dejar ningun
+        // rastro de por que. Se registra el detalle en un log y se avisa
+        // en pantalla en vez de desaparecer sin explicacion.
+        DispatcherUnhandledException += (_, args) =>
+        {
+            LogCrash(args.Exception, "DispatcherUnhandledException");
+            MessageBox.Show(
+                $"Ocurrio un error inesperado:\n\n{args.Exception.Message}\n\nEl detalle completo se guardo en el log de diagnostico.",
+                "Monitor de Uso de Aplicaciones", MessageBoxButton.OK, MessageBoxImage.Error);
+            args.Handled = true;
+        };
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+            LogCrash(args.ExceptionObject as Exception, "AppDomain.UnhandledException");
+
         _singleInstanceMutex = new Mutex(true, "AppUsageMonitor.Dashboard.SingleInstance", out var isNew);
         if (!isNew)
         {
@@ -83,5 +98,20 @@ public partial class App : Application
         }
         _singleInstanceMutex?.ReleaseMutex();
         Shutdown();
+    }
+
+    private static void LogCrash(Exception? ex, string source)
+    {
+        try
+        {
+            var dir = Path.Combine(DatabasePathProvider.GetDefaultDirectory(), "logs");
+            Directory.CreateDirectory(dir);
+            var path = Path.Combine(dir, "dashboard.log");
+            File.AppendAllText(path, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [{source}]{Environment.NewLine}{ex}{Environment.NewLine}{Environment.NewLine}", System.Text.Encoding.UTF8);
+        }
+        catch
+        {
+            // Si ni el log funciona, no hay mucho mas que hacer aqui.
+        }
     }
 }
