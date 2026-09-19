@@ -54,16 +54,31 @@ if ($existing) {
 }
 
 $action = New-ScheduledTaskAction -Execute $ExePath
-$trigger = New-ScheduledTaskTrigger -AtLogOn
+
+# Dos disparadores: al iniciar sesion (arranque inmediato) y uno que se
+# repite cada 5 minutos como "vigilante". Se probo en la practica que el
+# proceso puede morir sin dejar rastro (por ejemplo al desconectarse una
+# sesion de Escritorio Remoto), sin que Windows lo reporte como una falla
+# de la tarea. El disparador repetitivo, combinado con
+# MultipleInstances=IgnoreNew, hace que Task Scheduler lo vuelva a lanzar
+# solo si nota que ya no esta corriendo, sin crear copias duplicadas si
+# sigue vivo.
+$triggerLogon = New-ScheduledTaskTrigger -AtLogOn
+$triggerWatchdog = New-ScheduledTaskTrigger -Once -At (Get-Date) `
+    -RepetitionInterval (New-TimeSpan -Minutes 5) `
+    -RepetitionDuration (New-TimeSpan -Days 3650)
+
 # Grupo "Usuarios" (no un usuario especifico): la tarea arranca para
 # cualquiera que inicie sesion en este equipo, sin privilegios elevados.
 $principal = New-ScheduledTaskPrincipal -GroupId "BUILTIN\Users" -RunLevel Limited
 $settings = New-ScheduledTaskSettingsSet `
     -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
-    -StartWhenAvailable -ExecutionTimeLimit ([TimeSpan]::Zero) -Hidden
+    -StartWhenAvailable -ExecutionTimeLimit ([TimeSpan]::Zero) -Hidden `
+    -MultipleInstances IgnoreNew `
+    -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1)
 
 Register-ScheduledTask -TaskName $TaskName `
-    -Action $action -Trigger $trigger -Principal $principal -Settings $settings `
+    -Action $action -Trigger @($triggerLogon, $triggerWatchdog) -Principal $principal -Settings $settings `
     -Description "Monitor de Uso de Aplicaciones: registra localmente que programas se usan en esta sesion. No registra teclas ni contenido de pantalla." | Out-Null
 
 # Carpeta de datos compartida con el dashboard: permitir lectura/escritura a

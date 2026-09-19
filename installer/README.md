@@ -85,6 +85,17 @@ Get-ScheduledTask -TaskName AppUsageMonitorTask
 Get-Process -Name AppUsageMonitor.MonitorService -ErrorAction SilentlyContinue
 ```
 
+Si `Get-Process` no devuelve nada, el proceso se cayo (se observo en la
+practica que una desconexion de Escritorio Remoto puede matarlo sin dejar
+error en el log). La tarea tiene un disparador "vigilante" que revisa cada
+5 minutos y lo vuelve a levantar solo si no esta corriendo, asi que no hace
+falta intervenir manualmente; si quieres forzar que arranque de inmediato
+en vez de esperar el proximo ciclo:
+
+```powershell
+Start-ScheduledTask -TaskName AppUsageMonitorTask
+```
+
 ## Ver el registro de diagnostico
 
 El monitor corre sin consola y sin privilegios de administrador (tarea de
