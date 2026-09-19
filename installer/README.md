@@ -1,8 +1,25 @@
 # Instalador - Monitor de Uso de Aplicaciones
 
-Scripts de PowerShell para publicar, instalar y desinstalar el servicio y el
-dashboard. Ejecutar siempre desde una consola de PowerShell abierta en
-Windows 10/11.
+Scripts de PowerShell para publicar, instalar y desinstalar el motor de
+deteccion y el dashboard. Ejecutar siempre desde una consola de PowerShell
+abierta en Windows 10/11.
+
+## Por que una tarea programada y no un "servicio de Windows" clasico
+
+La primera version de este proyecto instalaba el motor de deteccion como
+servicio de Windows (Service Control Manager) corriendo como `LocalSystem`.
+En pruebas reales se confirmo que **no funciona**: un servicio `LocalSystem`
+corre en la Sesion 0 de Windows, aislada de las sesiones interactivas de
+los usuarios desde Windows Vista (para evitar ataques de "shatter"). Un
+proceso en la Sesion 0 no tiene acceso a las ventanas de los programas que
+un usuario abre en su escritorio, asi que el servicio siempre detectaba
+cero actividad aunque apareciera "Running" en `Get-Service`.
+
+La solucion (la misma que usan herramientas reales de seguimiento de
+tiempo) es registrar el motor de deteccion como **tarea programada que
+corre dentro de la sesion de cada usuario**: arranca sola al iniciar
+sesion, sin que el usuario abra nada, sin mostrar ninguna ventana, pero
+con acceso normal a las ventanas de esa sesion.
 
 ## Orden de uso
 
@@ -22,15 +39,17 @@ Windows 10/11.
    .\publish-all.ps1 -SelfContained
    ```
 
-2. **Instalar el servicio de Windows** (requiere consola "Ejecutar como administrador")
+2. **Instalar el motor de deteccion** (requiere consola "Ejecutar como administrador")
 
    ```powershell
-   .\install-service.ps1
+   .\install-monitor-task.ps1
    ```
 
-   Crea el servicio `AppUsageMonitorService`, lo configura en inicio
-   automatico, lo arranca y ajusta permisos de la carpeta de datos
-   (`%ProgramData%\AppUsageMonitor`) para que el dashboard pueda leerla.
+   Registra la tarea programada `AppUsageMonitorTask` (arranca al iniciar
+   sesion cualquier usuario de este equipo, sin ventana visible), ajusta
+   permisos de la carpeta de datos compartida y arranca el monitor de
+   inmediato para la sesion actual (no hace falta cerrar sesion para
+   probarlo).
 
 3. **Configurar el Dashboard para que abra con Windows** (opcional, sin permisos de administrador)
 
@@ -44,23 +63,34 @@ Windows 10/11.
 ## Desinstalar
 
 ```powershell
-.\uninstall-service.ps1              # como administrador
-.\uninstall-dashboard-autostart.ps1  # usuario normal
+.\uninstall-monitor-task.ps1          # como administrador
+.\uninstall-dashboard-autostart.ps1
 ```
 
 La base de datos (`%ProgramData%\AppUsageMonitor\usage.db`) **no se borra**
 al desinstalar, para conservar el historial. Bórrala manualmente si ya no la
 necesitas.
 
-## Verificar que el servicio esta corriendo
+Si instalaste una version anterior que uso `install-service.ps1` (servicio
+de Windows clasico, ya retirado), quítala primero con:
 
 ```powershell
-Get-Service AppUsageMonitorService
+.\uninstall-service.ps1               # como administrador
 ```
 
-## Ver el registro de eventos del servicio
+## Verificar que el monitor esta corriendo
 
-El servicio escribe en el Visor de eventos de Windows, origen
-`AppUsageMonitorService` (Registro de aplicacion), ademas de la consola
-cuando se ejecuta en modo interactivo (`dotnet run` dentro del proyecto
-`AppUsageMonitor.MonitorService`).
+```powershell
+Get-ScheduledTask -TaskName AppUsageMonitorTask
+Get-Process -Name AppUsageMonitor.MonitorService -ErrorAction SilentlyContinue
+```
+
+## Ver el registro de diagnostico
+
+El monitor corre sin consola y sin privilegios de administrador (tarea de
+la sesion del usuario), asi que escribe su propio archivo de registro en
+lugar del Visor de eventos de Windows:
+
+```
+%ProgramData%\AppUsageMonitor\logs\monitor.log
+```

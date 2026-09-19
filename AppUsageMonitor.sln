@@ -14,7 +14,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "installer", "installer", "{9B1D6C1E-2F35-4B2A-9E2B-2E0C2A6D5A11}"
 	ProjectSection(SolutionItems) = preProject
 		installer\publish-all.ps1 = installer\publish-all.ps1
-		installer\install-service.ps1 = installer\install-service.ps1
+		installer\install-monitor-task.ps1 = installer\install-monitor-task.ps1
+		installer\uninstall-monitor-task.ps1 = installer\uninstall-monitor-task.ps1
 		installer\uninstall-service.ps1 = installer\uninstall-service.ps1
 		installer\install-dashboard-autostart.ps1 = installer\install-dashboard-autostart.ps1
 		installer\uninstall-dashboard-autostart.ps1 = installer\uninstall-dashboard-autostart.ps1

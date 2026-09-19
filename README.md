@@ -2,8 +2,9 @@
 
 Aplicacion para Windows 10/11 que registra localmente que programas se
 ejecutan en el equipo, quien los usa, cuando se abrieron/cerraron y cuanto
-tiempo estuvieron activos. Incluye un servicio de Windows que corre en
-segundo plano y un panel (dashboard) con reportes y exportacion.
+tiempo estuvieron activos. Incluye un motor de deteccion que corre en
+segundo plano (sin ventana visible) y un panel (dashboard) con reportes y
+exportacion.
 
 ## Que registra y que NO registra
 
@@ -21,16 +22,36 @@ muestra tambien dentro del dashboard, en la pestana "Que se monitorea".
 AppUsageMonitor.sln
 src/
   AppUsageMonitor.Database/       Esquema SQLite (tabla UsoAplicaciones) y repositorio de datos
-  AppUsageMonitor.MonitorService/ Servicio de Windows: detecta apertura/cierre de programas
+  AppUsageMonitor.MonitorService/ Motor de deteccion: detecta apertura/cierre de programas
   AppUsageMonitor.Reports/        Consultas agregadas (totales, ranking) y exportacion CSV/Excel
   AppUsageMonitor.Dashboard/      Interfaz WPF: panel principal, historial, reportes, icono en bandeja
 installer/
-  publish-all.ps1                 Publica los 4 binarios listos para instalar
-  install-service.ps1             Instala y arranca el servicio de Windows (auto-inicio)
-  uninstall-service.ps1           Detiene y elimina el servicio
-  install-dashboard-autostart.ps1 Hace que el dashboard abra minimizado con Windows
+  publish-all.ps1                   Publica los binarios listos para instalar
+  install-monitor-task.ps1          Registra la tarea programada del motor de deteccion (auto-inicio)
+  uninstall-monitor-task.ps1        Detiene y elimina esa tarea
+  uninstall-service.ps1             Limpieza de una instalacion antigua (servicio de Windows, retirado)
+  install-dashboard-autostart.ps1   Hace que el dashboard abra minimizado con Windows
   uninstall-dashboard-autostart.ps1
 ```
+
+### Por que "tarea programada" y no "servicio de Windows" clasico
+
+La version original de este proyecto instalaba el motor de deteccion como
+servicio de Windows (`LocalSystem`), como suele pedirse en este tipo de
+herramientas. **En pruebas reales se confirmo que no funciona**: un
+servicio `LocalSystem` corre en la Sesion 0 de Windows, aislada de las
+sesiones interactivas de los usuarios desde Windows Vista (proteccion
+contra ataques de "shatter"). Un proceso en la Sesion 0 no tiene acceso a
+las ventanas de los programas que un usuario abre en su escritorio, asi
+que el servicio quedaba "Running" pero detectaba cero actividad siempre.
+
+La solucion, igual a la que usan herramientas reales de seguimiento de
+tiempo, es registrar el motor de deteccion como **tarea programada que
+corre dentro de la sesion de cada usuario**: arranca sola al iniciar
+sesion (sin que el usuario abra nada) y sin mostrar ninguna ventana
+(`AppUsageMonitor.MonitorService.exe` se compila con
+`OutputType=WinExe`), pero conserva acceso normal a las ventanas de esa
+sesion. Ver `installer/install-monitor-task.ps1`.
 
 ### Como se evitan duplicados (minimizar, cambiar de ventana, cerrar, reiniciar)
 
@@ -46,7 +67,7 @@ sistema en segundo plano). Se guarda **una sola fila por sesion**:
   nuevas ni duplicados.
 - La fila se cierra (Estado = "Cerrado", se calcula la duracion) cuando el
   PID desaparece de la lista, es decir, cuando el proceso realmente termina.
-- Si Windows se reinicia o el servicio se detiene de forma abrupta, al
+- Si Windows se reinicia o el monitor se detiene de forma abrupta, al
   volver a iniciar se cierran automaticamente las sesiones que hayan
   quedado "Abierto" de la ejecucion anterior (`CloseDanglingSessions`),
   para que no queden colgadas indefinidamente.
@@ -54,7 +75,8 @@ sistema en segundo plano). Se guarda **una sola fila por sesion**:
 ## Base de datos
 
 SQLite en `%ProgramData%\AppUsageMonitor\usage.db`, compartida entre el
-servicio (que escribe) y el dashboard (que lee). Tabla `UsoAplicaciones`:
+motor de deteccion (que escribe) y el dashboard (que lee). Tabla
+`UsoAplicaciones`:
 
 | Columna          | Tipo    | Descripcion                          |
 |------------------|---------|---------------------------------------|
@@ -68,18 +90,19 @@ servicio (que escribe) y el dashboard (que lee). Tabla `UsoAplicaciones`:
 | DuracionSegundos | INTEGER | Duracion calculada en segundos        |
 | Estado           | TEXT    | `Abierto` / `Cerrado`                 |
 
+El registro de diagnostico del motor de deteccion (no es un servicio de
+Windows, asi que no usa el Visor de eventos) queda en
+`%ProgramData%\AppUsageMonitor\logs\monitor.log`.
+
 ## Requisitos para compilar
 
-- Windows 10/11 (el servicio y el dashboard usan APIs de Windows: WPF,
-  Windows Services, WinForms para el icono de bandeja).
+- Windows 10/11 (el motor de deteccion y el dashboard usan APIs de
+  Windows: WPF, WinForms para el icono de bandeja).
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0).
 - Visual Studio 2022 (17.8+) o `dotnet` CLI.
-
-> Nota: este proyecto fue generado y verificado revisando el codigo fuente
-> en un entorno Linux sin .NET SDK disponible, por lo que **no fue posible
-> compilarlo en este entorno**. Antes de instalarlo, compilalo en una
-> maquina Windows con el SDK (`dotnet build AppUsageMonitor.sln`) y corrige
-> cualquier detalle menor que el compilador senale.
+- La primera vez, `dotnet` necesita una fuente de NuGet configurada para
+  descargar los paquetes. Si `dotnet nuget list source` no muestra nada,
+  agregala con `dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org`.
 
 ## Compilar
 
@@ -98,7 +121,7 @@ Resumen:
 ```powershell
 cd installer
 .\publish-all.ps1                      # genera los ejecutables
-.\install-service.ps1                  # como Administrador: instala el servicio (auto-inicio)
+.\install-monitor-task.ps1             # como Administrador: registra la tarea (auto-inicio, arranca ya)
 .\install-dashboard-autostart.ps1      # opcional: dashboard minimizado al iniciar sesion
 ```
 
@@ -109,7 +132,7 @@ abrir `publish\Dashboard\AppUsageMonitor.Dashboard.exe`.
 
 ```powershell
 cd installer
-.\uninstall-service.ps1                # como Administrador
+.\uninstall-monitor-task.ps1           # como Administrador
 .\uninstall-dashboard-autostart.ps1
 ```
 
@@ -131,12 +154,13 @@ El historial (`usage.db`) no se borra al desinstalar.
 
 ## Limitaciones conocidas
 
-- Para detectar el usuario propietario de procesos de **otras** sesiones de
-  usuario en un equipo multiusuario, el servicio necesita privilegios
-  elevados (corre como `LocalSystem` por defecto, que normalmente alcanza).
+- El motor de deteccion corre por sesion de usuario (ver seccion de
+  arquitectura arriba): en un equipo con Escritorio Remoto/varias sesiones
+  simultaneas, cada sesion tiene su propia instancia y solo ve sus propias
+  ventanas, que es el comportamiento esperado.
 - El sondeo (cada 5 segundos por defecto, configurable en
-  `appsettings.json` del servicio, clave `Monitoring:PollIntervalSeconds`)
-  implica que una apertura/cierre muy breve (menor al intervalo) podria no
+  `appsettings.json`, clave `Monitoring:PollIntervalSeconds`) implica que
+  una apertura/cierre muy breve (menor al intervalo) podria no
   registrarse; bajar el intervalo aumenta precision a costa de mas uso de
   CPU.
 - Requiere el .NET 8 Desktop Runtime en el equipo destino si se publica sin

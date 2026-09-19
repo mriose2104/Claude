@@ -6,17 +6,21 @@
     <Nullable>enable</Nullable>
     <RootNamespace>AppUsageMonitor.MonitorService</RootNamespace>
     <UserSecretsId>appusagemonitor-service</UserSecretsId>
-    <OutputType>Exe</OutputType>
+    <!-- WinExe (no Exe): corre como tarea de la sesion del usuario sin
+         asignar consola. Un servicio LocalSystem (Sesion 0) no puede ver las
+         ventanas de la sesion interactiva por el aislamiento de Windows, asi
+         que este monitor se instala como tarea programada al inicio de
+         sesion (ver installer/install-monitor-task.ps1), no como servicio
+         del Administrador de control de servicios. -->
+    <OutputType>WinExe</OutputType>
     <InvariantGlobalization>true</InvariantGlobalization>
-    <!-- El servicio necesita leer el nombre del usuario y el titulo de
+    <!-- El monitor necesita leer el nombre del usuario y el titulo de
          ventana de otros procesos: requiere APIs de Windows. -->
     <EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Logging.EventLog" Version="8.0.1" />
   </ItemGroup>
 
   <ItemGroup>
