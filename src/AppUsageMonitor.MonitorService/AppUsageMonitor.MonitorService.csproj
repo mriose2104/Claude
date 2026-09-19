@@ -13,7 +13,6 @@
          sesion (ver installer/install-monitor-task.ps1), no como servicio
          del Administrador de control de servicios. -->
     <OutputType>WinExe</OutputType>
-    <InvariantGlobalization>true</InvariantGlobalization>
     <!-- El monitor necesita leer el nombre del usuario y el titulo de
          ventana de otros procesos: requiere APIs de Windows. -->
     <EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
