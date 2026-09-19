@@ -1,0 +1,198 @@
+<Window x:Class="AppUsageMonitor.Dashboard.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:AppUsageMonitor.Dashboard.Controls"
+        Title="Monitor de Uso de Aplicaciones" Height="720" Width="1080"
+        MinHeight="560" MinWidth="860"
+        Background="{StaticResource BackgroundBrush}"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Encabezado -->
+        <Grid Grid.Row="0" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Vertical">
+                <TextBlock Text="Monitor de Uso de Aplicaciones" FontSize="22" FontWeight="Bold"
+                           Foreground="{StaticResource TextPrimaryBrush}" />
+                <TextBlock Text="Actividad de programas en este equipo" FontSize="13"
+                           Foreground="{StaticResource TextSecondaryBrush}" />
+            </StackPanel>
+            <Button Grid.Column="1" Content="Actualizar" Style="{StaticResource PrimaryButtonStyle}"
+                    VerticalAlignment="Center" Click="RefreshButton_Click" />
+        </Grid>
+
+        <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0">
+
+            <!-- ===================== PANEL PRINCIPAL ===================== -->
+            <TabItem Header="Panel principal">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <!-- KPIs -->
+                        <UniformGrid Rows="1" Columns="5">
+                            <Border Style="{StaticResource CardStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="TIEMPO TOTAL HOY" Style="{StaticResource KpiLabelStyle}" />
+                                    <TextBlock x:Name="TiempoTotalHoyText" Text="0m" Style="{StaticResource KpiValueStyle}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource CardStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="APLICACIONES HOY" Style="{StaticResource KpiLabelStyle}" />
+                                    <TextBlock x:Name="AplicacionesHoyText" Text="0" Style="{StaticResource KpiValueStyle}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource CardStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="PROGRAMAS ABIERTOS" Style="{StaticResource KpiLabelStyle}" />
+                                    <TextBlock x:Name="AbiertosAhoraText" Text="0" Style="{StaticResource KpiValueStyle}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource CardStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="SESIONES HOY" Style="{StaticResource KpiLabelStyle}" />
+                                    <TextBlock x:Name="SesionesHoyText" Text="0" Style="{StaticResource KpiValueStyle}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource CardStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="ULTIMA ACTIVIDAD" Style="{StaticResource KpiLabelStyle}" />
+                                    <TextBlock x:Name="UltimaActividadText" Text="--:--" Style="{StaticResource KpiValueStyle}" FontSize="20" />
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+
+                        <!-- Grafico + abiertos -->
+                        <Grid Margin="0,4,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.3*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Column="0" Style="{StaticResource CardStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Aplicaciones mas usadas hoy" FontWeight="Bold" FontSize="15"
+                                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,8" />
+                                    <controls:BarChartControl x:Name="TopAppsChart" />
+                                    <TextBlock x:Name="SinDatosHoyText" Text="Todavia no hay actividad registrada hoy."
+                                               Foreground="{StaticResource TextSecondaryBrush}" Visibility="Collapsed" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Column="1" Style="{StaticResource CardStyle}">
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Top" Text="Programas actualmente abiertos" FontWeight="Bold"
+                                               FontSize="15" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,8" />
+                                    <ListView x:Name="AbiertosListView" BorderThickness="0" MaxHeight="320">
+                                        <ListView.View>
+                                            <GridView>
+                                                <GridViewColumn Header="Programa" Width="150" DisplayMemberBinding="{Binding Programa}" />
+                                                <GridViewColumn Header="Usuario" Width="90" DisplayMemberBinding="{Binding Usuario}" />
+                                                <GridViewColumn Header="Desde" Width="70" DisplayMemberBinding="{Binding Inicio}" />
+                                                <GridViewColumn Header="Duracion" Width="80" DisplayMemberBinding="{Binding Duracion}" />
+                                            </GridView>
+                                        </ListView.View>
+                                    </ListView>
+                                </DockPanel>
+                            </Border>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ===================== HISTORIAL Y REPORTES ===================== -->
+            <TabItem Header="Historial y reportes">
+                <DockPanel Margin="0,8,0,0">
+
+                    <!-- Filtros -->
+                    <Border DockPanel.Dock="Top" Style="{StaticResource CardStyle}">
+                        <StackPanel>
+                            <WrapPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <Button Content="Hoy" Click="FiltroHoy_Click" Margin="0,0,6,0" />
+                                <Button Content="Ayer" Click="FiltroAyer_Click" Margin="0,0,6,0" />
+                                <Button Content="Esta semana" Click="FiltroSemana_Click" Margin="0,0,6,0" />
+                                <Button Content="Este mes" Click="FiltroMes_Click" Margin="0,0,6,0" />
+                            </WrapPanel>
+                            <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="Desde:" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <DatePicker x:Name="FechaDesdePicker" Width="130" Margin="0,0,12,0" />
+                                <TextBlock Text="Hasta:" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <DatePicker x:Name="FechaHastaPicker" Width="130" Margin="0,0,12,0" />
+                                <TextBlock Text="Usuario:" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <ComboBox x:Name="UsuarioCombo" Width="140" Margin="0,0,12,0" />
+                                <TextBlock Text="Programa:" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <ComboBox x:Name="ProgramaCombo" Width="160" Margin="0,0,12,0" />
+                                <Button Content="Buscar" Style="{StaticResource PrimaryButtonStyle}" Click="Buscar_Click" />
+                                <Button Content="Limpiar filtros" Click="LimpiarFiltros_Click" Margin="8,0,0,0" />
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Pie: totales y exportar -->
+                    <Border DockPanel.Dock="Bottom" Style="{StaticResource CardStyle}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="TotalFiltradoText" Text="Total: 0 sesiones, 0m"
+                                       VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="SemiBold" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <Button Content="Exportar CSV" Click="ExportarCsv_Click" Margin="0,0,6,0" />
+                                <Button Content="Exportar Excel" Click="ExportarExcel_Click" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Tabla -->
+                    <Border Style="{StaticResource CardStyle}">
+                        <DataGrid x:Name="HistorialGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                                  GridLinesVisibility="Horizontal" HeadersVisibility="Column"
+                                  CanUserAddRows="False" AlternatingRowBackground="#F9FAFB">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Usuario" Binding="{Binding Usuario}" Width="110" />
+                                <DataGridTextColumn Header="Programa" Binding="{Binding Programa}" Width="180" />
+                                <DataGridTextColumn Header="Proceso" Binding="{Binding Proceso}" Width="130" />
+                                <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha}" Width="100" />
+                                <DataGridTextColumn Header="Inicio" Binding="{Binding Inicio}" Width="80" />
+                                <DataGridTextColumn Header="Fin" Binding="{Binding Fin}" Width="80" />
+                                <DataGridTextColumn Header="Duracion" Binding="{Binding Duracion}" Width="90" />
+                                <DataGridTextColumn Header="Estado" Binding="{Binding Estado}" Width="*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
+                </DockPanel>
+            </TabItem>
+
+            <!-- ===================== PRIVACIDAD ===================== -->
+            <TabItem Header="Que se monitorea">
+                <Border Style="{StaticResource CardStyle}">
+                    <StackPanel>
+                        <TextBlock Text="Informacion que este monitor SI registra" FontWeight="Bold" FontSize="15" Margin="0,0,0,8" />
+                        <TextBlock TextWrapping="Wrap" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16">
+                            - Usuario de Windows que ejecuta el programa.&#x0a;
+                            - Nombre del proceso (por ejemplo chrome.exe) y nombre visible de la aplicacion.&#x0a;
+                            - Fecha y hora de inicio y de cierre de cada aplicacion.&#x0a;
+                            - Duracion de uso, calculada a partir de esos horarios.&#x0a;
+                            - Estado (abierto / cerrado) de cada sesion.
+                        </TextBlock>
+                        <TextBlock Text="Informacion que este monitor NO registra" FontWeight="Bold" FontSize="15" Margin="0,0,0,8" />
+                        <TextBlock TextWrapping="Wrap" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16">
+                            - No registra contrasenas ni datos ingresados por teclado (no es un keylogger).&#x0a;
+                            - No captura el contenido de las ventanas ni pantallazos.&#x0a;
+                            - No envia informacion fuera de este equipo: todo se guarda en una base de datos local.
+                        </TextBlock>
+                        <TextBlock x:Name="RutaBaseDatosText" Text="Base de datos local: -" Foreground="{StaticResource TextSecondaryBrush}" />
+                    </StackPanel>
+                </Border>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>

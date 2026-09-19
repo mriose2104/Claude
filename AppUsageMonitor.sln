@@ -1,0 +1,50 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppUsageMonitor.Database", "src\AppUsageMonitor.Database\AppUsageMonitor.Database.csproj", "{B0945677-76BD-495C-A239-9161539178E3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppUsageMonitor.MonitorService", "src\AppUsageMonitor.MonitorService\AppUsageMonitor.MonitorService.csproj", "{2BE92BBD-57CE-4215-9898-56625613A4DA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppUsageMonitor.Reports", "src\AppUsageMonitor.Reports\AppUsageMonitor.Reports.csproj", "{FB394EA2-DF1D-4FF0-B995-F8EBAE3314C6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppUsageMonitor.Dashboard", "src\AppUsageMonitor.Dashboard\AppUsageMonitor.Dashboard.csproj", "{D3BB0AC1-1F56-4D78-94F1-E8479A79F167}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "installer", "installer", "{9B1D6C1E-2F35-4B2A-9E2B-2E0C2A6D5A11}"
+	ProjectSection(SolutionItems) = preProject
+		installer\publish-all.ps1 = installer\publish-all.ps1
+		installer\install-service.ps1 = installer\install-service.ps1
+		installer\uninstall-service.ps1 = installer\uninstall-service.ps1
+		installer\install-dashboard-autostart.ps1 = installer\install-dashboard-autostart.ps1
+		installer\uninstall-dashboard-autostart.ps1 = installer\uninstall-dashboard-autostart.ps1
+		installer\README.md = installer\README.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B0945677-76BD-495C-A239-9161539178E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B0945677-76BD-495C-A239-9161539178E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B0945677-76BD-495C-A239-9161539178E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B0945677-76BD-495C-A239-9161539178E3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2BE92BBD-57CE-4215-9898-56625613A4DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2BE92BBD-57CE-4215-9898-56625613A4DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2BE92BBD-57CE-4215-9898-56625613A4DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2BE92BBD-57CE-4215-9898-56625613A4DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB394EA2-DF1D-4FF0-B995-F8EBAE3314C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB394EA2-DF1D-4FF0-B995-F8EBAE3314C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB394EA2-DF1D-4FF0-B995-F8EBAE3314C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB394EA2-DF1D-4FF0-B995-F8EBAE3314C6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D3BB0AC1-1F56-4D78-94F1-E8479A79F167}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3BB0AC1-1F56-4D78-94F1-E8479A79F167}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3BB0AC1-1F56-4D78-94F1-E8479A79F167}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3BB0AC1-1F56-4D78-94F1-E8479A79F167}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
