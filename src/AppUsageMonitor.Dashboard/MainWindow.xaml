@@ -121,10 +121,10 @@
                                 <Button Content="Este mes" Click="FiltroMes_Click" Margin="0,0,6,0" />
                             </WrapPanel>
                             <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="Desde:" VerticalAlignment="Center" Margin="0,0,4,0" />
-                                <DatePicker x:Name="FechaDesdePicker" Width="130" Margin="0,0,12,0" />
-                                <TextBlock Text="Hasta:" VerticalAlignment="Center" Margin="0,0,4,0" />
-                                <DatePicker x:Name="FechaHastaPicker" Width="130" Margin="0,0,12,0" />
+                                <TextBlock Text="Desde (aaaa-mm-dd):" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <TextBox x:Name="FechaDesdeText" Width="100" Margin="0,0,12,0" Padding="4,3" />
+                                <TextBlock Text="Hasta (aaaa-mm-dd):" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <TextBox x:Name="FechaHastaText" Width="100" Margin="0,0,12,0" Padding="4,3" />
                                 <TextBlock Text="Usuario:" VerticalAlignment="Center" Margin="0,0,4,0" />
                                 <ComboBox x:Name="UsuarioCombo" Width="140" Margin="0,0,12,0" />
                                 <TextBlock Text="Programa:" VerticalAlignment="Center" Margin="0,0,4,0" />

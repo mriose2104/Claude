@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Windows;
 using AppUsageMonitor.Database;
 using AppUsageMonitor.Database.Models;
@@ -21,8 +22,8 @@ public partial class MainWindow : Window
         RutaBaseDatosText.Text = $"Base de datos local: {DatabasePathProvider.GetDefaultPath()}";
 
         var hoy = DateOnly.FromDateTime(DateTime.Now);
-        FechaDesdePicker.SelectedDate = hoy.ToDateTime(TimeOnly.MinValue);
-        FechaHastaPicker.SelectedDate = hoy.ToDateTime(TimeOnly.MinValue);
+        FechaDesdeText.Text = hoy.ToString("yyyy-MM-dd");
+        FechaHastaText.Text = hoy.ToString("yyyy-MM-dd");
 
         RefreshData();
     }
@@ -72,12 +73,17 @@ public partial class MainWindow : Window
         ProgramaCombo.SelectedItem = programaSeleccionado ?? string.Empty;
     }
 
+    private static DateOnly? ParseFecha(string texto) =>
+        DateOnly.TryParseExact(texto.Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var fecha)
+            ? fecha
+            : null;
+
     private UsageFilter ConstruirFiltroActual()
     {
         return new UsageFilter
         {
-            FechaDesde = FechaDesdePicker.SelectedDate is { } desde ? DateOnly.FromDateTime(desde) : null,
-            FechaHasta = FechaHastaPicker.SelectedDate is { } hasta ? DateOnly.FromDateTime(hasta) : null,
+            FechaDesde = ParseFecha(FechaDesdeText.Text),
+            FechaHasta = ParseFecha(FechaHastaText.Text),
             Usuario = string.IsNullOrWhiteSpace(UsuarioCombo.SelectedItem as string) ? null : (string)UsuarioCombo.SelectedItem,
             Aplicacion = string.IsNullOrWhiteSpace(ProgramaCombo.SelectedItem as string) ? null : (string)ProgramaCombo.SelectedItem,
         };
@@ -107,8 +113,8 @@ public partial class MainWindow : Window
 
     private void SetRango(DateOnly? desde, DateOnly? hasta)
     {
-        FechaDesdePicker.SelectedDate = desde?.ToDateTime(TimeOnly.MinValue);
-        FechaHastaPicker.SelectedDate = hasta?.ToDateTime(TimeOnly.MinValue);
+        FechaDesdeText.Text = desde?.ToString("yyyy-MM-dd") ?? string.Empty;
+        FechaHastaText.Text = hasta?.ToString("yyyy-MM-dd") ?? string.Empty;
         EjecutarBusqueda(ConstruirFiltroActual());
     }
 
@@ -140,8 +146,8 @@ public partial class MainWindow : Window
 
     private void LimpiarFiltros_Click(object sender, RoutedEventArgs e)
     {
-        FechaDesdePicker.SelectedDate = null;
-        FechaHastaPicker.SelectedDate = null;
+        FechaDesdeText.Text = string.Empty;
+        FechaHastaText.Text = string.Empty;
         UsuarioCombo.SelectedItem = string.Empty;
         ProgramaCombo.SelectedItem = string.Empty;
         EjecutarBusqueda(new UsageFilter());
