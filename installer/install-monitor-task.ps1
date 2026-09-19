@@ -70,7 +70,12 @@ $triggerWatchdog = New-ScheduledTaskTrigger -Once -At (Get-Date) `
 
 # Grupo "Usuarios" (no un usuario especifico): la tarea arranca para
 # cualquiera que inicie sesion en este equipo, sin privilegios elevados.
-$principal = New-ScheduledTaskPrincipal -GroupId "BUILTIN\Users" -RunLevel Limited
+# Se usa el SID conocido (S-1-5-32-545) en vez del nombre "BUILTIN\Users"
+# como texto: igual que con los permisos de la carpeta de datos, ese nombre
+# puede fallar al traducirse segun la configuracion regional de Windows
+# (error real visto en pruebas: HRESULT 0x80070534, "no se pudo mapear el
+# nombre de cuenta a un SID").
+$principal = New-ScheduledTaskPrincipal -GroupId "S-1-5-32-545" -RunLevel Limited
 $settings = New-ScheduledTaskSettingsSet `
     -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
     -StartWhenAvailable -ExecutionTimeLimit ([TimeSpan]::Zero) -Hidden `
