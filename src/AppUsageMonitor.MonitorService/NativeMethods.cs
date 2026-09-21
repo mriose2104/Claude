@@ -26,6 +26,28 @@ internal static class NativeMethods
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool OpenProcessToken(IntPtr processHandle, int desiredAccess, out IntPtr tokenHandle);
 
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+    /// <summary>
+    /// Id del proceso duenio de la ventana actualmente en primer plano (la
+    /// que tiene el foco), o null si no hay ninguna (por ejemplo el
+    /// escritorio). Solo se usa para saber que aplicacion esta "en uso"
+    /// activo en este instante; no se lee el titulo ni el contenido de esa
+    /// ventana.
+    /// </summary>
+    public static int? GetForegroundProcessId()
+    {
+        var hwnd = GetForegroundWindow();
+        if (hwnd == IntPtr.Zero) return null;
+
+        GetWindowThreadProcessId(hwnd, out var pid);
+        return pid == 0 ? null : (int)pid;
+    }
+
     /// <summary>
     /// Devuelve el nombre de usuario (sin dominio) dueño del proceso, o
     /// null si no se pudo determinar (por ejemplo procesos protegidos del

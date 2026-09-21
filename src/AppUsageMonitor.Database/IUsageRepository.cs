@@ -12,6 +12,13 @@ public interface IUsageRepository
     /// <summary>Cierra una sesion existente calculando la duracion.</summary>
     void CloseSession(long id, DateTime fin, long duracionSegundos);
 
+    /// <summary>
+    /// Actualiza la duracion de una sesion que sigue abierta, sin cerrarla,
+    /// para que el tiempo activo acumulado se vea reflejado mientras el
+    /// programa sigue en uso (no espera a que se cierre para guardarse).
+    /// </summary>
+    void UpdateProgress(long id, long duracionSegundosParcial);
+
     /// <summary>Sesiones actualmente abiertas (programas en ejecucion).</summary>
     List<UsageRecord> GetOpenSessions();
 

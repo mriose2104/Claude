@@ -65,12 +65,23 @@ sistema en segundo plano). Se guarda **una sola fila por sesion**:
 - Minimizar, cambiar de foco entre ventanas o solapar aplicaciones **no**
   modifica la lista de procesos en ejecucion, asi que no genera filas
   nuevas ni duplicados.
-- La fila se cierra (Estado = "Cerrado", se calcula la duracion) cuando el
-  PID desaparece de la lista, es decir, cuando el proceso realmente termina.
+- La fila se cierra (Estado = "Cerrado") cuando el PID desaparece de la
+  lista, es decir, cuando el proceso realmente termina.
 - Si Windows se reinicia o el monitor se detiene de forma abrupta, al
   volver a iniciar se cierran automaticamente las sesiones que hayan
   quedado "Abierto" de la ejecucion anterior (`CloseDanglingSessions`),
   para que no queden colgadas indefinidamente.
+
+### Que mide `DuracionSegundos`: tiempo activo, no tiempo abierto
+
+`HoraInicio`/`HoraFin` siguen el ciclo de vida del proceso (cuando se abre
+y cuando se cierra). `DuracionSegundos`, en cambio, mide **tiempo activo**:
+en cada sondeo se compara la ventana en primer plano
+(`NativeMethods.GetForegroundProcessId`) contra las sesiones abiertas, y
+solo la que tiene el foco en ese instante suma el intervalo de sondeo a su
+acumulado (que se va guardando en la base de datos mientras la sesion
+sigue abierta, no solo al cerrarla). Una aplicacion abierta de fondo sin
+usarse no suma tiempo; solo cuenta mientras realmente esta en uso.
 
 ## Base de datos
 
@@ -87,7 +98,7 @@ motor de deteccion (que escribe) y el dashboard (que lee). Tabla
 | Fecha            | TEXT    | Fecha de inicio de la sesion          |
 | HoraInicio       | TEXT    | Fecha y hora de inicio                |
 | HoraFin          | TEXT    | Fecha y hora de fin (NULL si abierta) |
-| DuracionSegundos | INTEGER | Duracion calculada en segundos        |
+| DuracionSegundos | INTEGER | Tiempo activo (en primer plano) en segundos |
 | Estado           | TEXT    | `Abierto` / `Cerrado`                 |
 
 El registro de diagnostico del motor de deteccion (no es un servicio de

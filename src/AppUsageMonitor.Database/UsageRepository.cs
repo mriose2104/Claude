@@ -63,6 +63,20 @@ public class UsageRepository : IUsageRepository
         command.ExecuteNonQuery();
     }
 
+    public void UpdateProgress(long id, long duracionSegundosParcial)
+    {
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE UsoAplicaciones
+            SET DuracionSegundos = $duracion
+            WHERE Id = $id AND Estado = 'Abierto';
+            """;
+        command.Parameters.AddWithValue("$duracion", duracionSegundosParcial);
+        command.Parameters.AddWithValue("$id", id);
+        command.ExecuteNonQuery();
+    }
+
     public List<UsageRecord> GetOpenSessions()
     {
         using var connection = OpenConnection(readOnly: true);
@@ -77,13 +91,14 @@ public class UsageRepository : IUsageRepository
         using var connection = OpenConnection();
         using var command = connection.CreateCommand();
         // Las sesiones que quedaron "Abierto" de una ejecucion anterior del
-        // servicio (apagado inesperado, reinicio de Windows) se cierran usando
+        // monitor (apagado inesperado, reinicio de Windows) se cierran usando
         // su propia hora de inicio como fin, ya que no conocemos el momento
-        // real de cierre. Duracion 0 evita inflar estadisticas con tiempo
-        // que el equipo pudo haber estado apagado.
+        // real de cierre. DuracionSegundos se conserva tal cual (es tiempo
+        // activo ya acumulado y guardado en vivo mientras estaba abierta, no
+        // se recalcula ni se pierde).
         command.CommandText = """
             UPDATE UsoAplicaciones
-            SET HoraFin = HoraInicio, DuracionSegundos = 0, Estado = 'Cerrado (interrumpido)'
+            SET HoraFin = HoraInicio, Estado = 'Cerrado (interrumpido)'
             WHERE Estado = 'Abierto';
             """;
         return command.ExecuteNonQuery();

@@ -26,11 +26,13 @@ public class ReportService
 
     public IReadOnlyList<string> GetAplicaciones() => _repository.GetDistinctAplicaciones();
 
-    /// <summary>Duracion efectiva: si la sesion sigue abierta, se cuenta el tiempo transcurrido hasta ahora.</summary>
-    public static long DuracionEfectivaSegundos(UsageRecord record) =>
-        record.Fin is null
-            ? Math.Max(0, (long)(DateTime.Now - record.Inicio).TotalSeconds)
-            : record.DuracionSegundos;
+    /// <summary>
+    /// Duracion a mostrar: el monitor guarda tiempo activo (en primer
+    /// plano), no tiempo abierto, y lo actualiza en la base de datos
+    /// mientras la sesion sigue abierta, asi que el valor guardado ya es
+    /// el correcto tanto para sesiones abiertas como cerradas.
+    /// </summary>
+    public static long DuracionEfectivaSegundos(UsageRecord record) => record.DuracionSegundos;
 
     public long GetTotalUsoSegundos(UsageFilter filter) =>
         _repository.Query(filter).Sum(DuracionEfectivaSegundos);

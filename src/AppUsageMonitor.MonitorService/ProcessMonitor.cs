@@ -10,12 +10,17 @@ namespace AppUsageMonitor.MonitorService;
 /// <summary>
 /// Detecta apertura y cierre de aplicaciones con ventana visible mediante
 /// sondeo periodico de la lista de procesos. Solo se registran procesos
-/// con una ventana principal (aplicaciones de escritorio reales), lo que
-/// evita duplicados al minimizar, cambiar de ventana o simplemente perder
-/// el foco: esas acciones no alteran la lista de procesos en ejecucion,
-/// por lo que no generan nuevas filas. Una sesion nueva solo se crea
-/// cuando aparece un PID que no se conocia, y se cierra cuando ese PID
-/// desaparece de la lista.
+/// con una ventana principal (aplicaciones de escritorio reales). Una
+/// sesion nueva se crea cuando aparece un PID que no se conocia (Estado /
+/// HoraInicio / HoraFin siguen el ciclo de vida del proceso: abrir y
+/// cerrar la aplicacion), y se cierra cuando ese PID desaparece de la
+/// lista, sin duplicados al minimizar o cambiar de ventana.
+///
+/// La duracion (DuracionSegundos) mide en cambio tiempo activo: solo se
+/// acumula mientras esa ventana esta en primer plano (tiene el foco), no
+/// mientras el proceso simplemente sigue abierto de fondo sin usarse. Para
+/// eso se compara en cada sondeo cual es la ventana en primer plano
+/// (NativeMethods.GetForegroundProcessId) contra las sesiones activas.
 ///
 /// No se inspecciona el titulo real de la ventana mas alla de comprobar
 /// que existe (para filtrar procesos sin interfaz), no se usan hooks de
@@ -41,6 +46,7 @@ public class ProcessMonitor
         public required long RecordId { get; init; }
         public required string AppName { get; init; }
         public required DateTime StartedAt { get; init; }
+        public long ActivoSegundos { get; set; }
     }
 
     public void Poll()
@@ -79,6 +85,30 @@ public class ProcessMonitor
         foreach (var pid in closedPids)
         {
             RegisterStop(pid);
+        }
+
+        AcumularTiempoActivo();
+    }
+
+    /// <summary>
+    /// Le suma un intervalo de sondeo al acumulado de la sesion cuya
+    /// ventana esta ahora mismo en primer plano (si hay alguna registrada).
+    /// El resto de las sesiones abiertas de fondo no avanzan su duracion.
+    /// </summary>
+    private void AcumularTiempoActivo()
+    {
+        var pidActivo = NativeMethods.GetForegroundProcessId();
+        if (pidActivo is not { } pid || !_active.TryGetValue(pid, out var sesion)) return;
+
+        sesion.ActivoSegundos += _options.PollIntervalSeconds;
+
+        try
+        {
+            _repository.UpdateProgress(sesion.RecordId, sesion.ActivoSegundos);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "No se pudo actualizar el progreso de {App}", sesion.AppName);
         }
     }
 
@@ -140,7 +170,7 @@ public class ProcessMonitor
         _active.Remove(pid);
 
         var fin = DateTime.Now;
-        var duracion = Math.Max(0, (long)(fin - session.StartedAt).TotalSeconds);
+        var duracion = session.ActivoSegundos;
 
         try
         {

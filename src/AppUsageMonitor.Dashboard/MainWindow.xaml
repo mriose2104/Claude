@@ -191,7 +191,7 @@
                             - Usuario de Windows que ejecuta el programa.&#x0a;
                             - Nombre del proceso (por ejemplo chrome.exe) y nombre visible de la aplicacion.&#x0a;
                             - Fecha y hora de inicio y de cierre de cada aplicacion.&#x0a;
-                            - Duracion de uso, calculada a partir de esos horarios.&#x0a;
+                            - Duracion de uso ACTIVO: solo se cuenta el tiempo en que esa ventana estuvo en primer plano (con el foco), no el tiempo que paso simplemente abierta de fondo sin usarse.&#x0a;
                             - Estado (abierto / cerrado) de cada sesion.
                         </TextBlock>
                         <TextBlock Text="Informacion que este monitor NO registra" FontWeight="Bold" FontSize="15" Margin="0,0,0,8" />
