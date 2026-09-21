@@ -65,9 +65,14 @@ public partial class App : Application
 
     private void SetupTrayIcon()
     {
+        // Ruta relativa a la carpeta del .exe (AppContext.BaseDirectory), no
+        // al directorio de trabajo actual: si se abre desde una consola
+        // parada en otra carpeta, una ruta relativa simple no lo encuentra.
+        var iconPath = Path.Combine(AppContext.BaseDirectory, "Resources", "app.ico");
+
         _trayIcon = new System.Windows.Forms.NotifyIcon
         {
-            Icon = new System.Drawing.Icon("Resources/app.ico"),
+            Icon = new System.Drawing.Icon(iconPath),
             Visible = true,
             Text = "Monitor de Uso de Aplicaciones",
         };
