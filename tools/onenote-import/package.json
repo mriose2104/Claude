@@ -1,0 +1,14 @@
+{
+  "name": "onenote-import",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Convierte exportaciones de OneNote (.docx por sección) a notas.json importable en Notes Pro",
+  "main": "convert.js",
+  "scripts": {
+    "convert": "node convert.js"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "mammoth": "^1.8.0"
+  }
+}
