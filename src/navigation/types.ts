@@ -2,7 +2,7 @@ import { NoteType } from '@/types';
 
 export type RootStackParamList = {
   Main: undefined;
-  NoteEditor: { noteId: string };
+  NoteEditor: { noteId: string; searchQuery?: string };
   CategoryNotes: { categoryId: string; categoryName: string };
   TagNotes: { tag: string };
   CreateNoteSheet: { defaultType?: NoteType } | undefined;

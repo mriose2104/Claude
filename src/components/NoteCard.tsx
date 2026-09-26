@@ -6,6 +6,7 @@ import { useAppTheme } from '@/theme/ThemeContext';
 import { getNoteColorHex } from '@/constants/noteColors';
 import { formatRelativeDate } from '@/utils/dateUtils';
 import { FormattedText } from '@/components/FormattedText';
+import { HighlightedInlineText } from '@/components/HighlightedInlineText';
 import { useNotesStore } from '@/store/useNotesStore';
 
 interface Props {
@@ -15,9 +16,11 @@ interface Props {
   selectionMode: boolean;
   onPress: () => void;
   onLongPress: () => void;
+  /** Active search term, used to highlight matches in the title/preview. */
+  highlightQuery?: string;
 }
 
-export function NoteCard({ note, viewMode, selected, selectionMode, onPress, onLongPress }: Props) {
+export function NoteCard({ note, viewMode, selected, selectionMode, onPress, onLongPress, highlightQuery }: Props) {
   const { colors, isDark, fontSizes } = useAppTheme();
   const categories = useNotesStore((s) => s.categories);
   const category = categories.find((c) => c.id === note.categoryId);
@@ -52,12 +55,13 @@ export function NoteCard({ note, viewMode, selected, selectionMode, onPress, onL
 
       <View style={styles.headerRow}>
         {note.title.length > 0 && (
-          <Text
-            style={[styles.title, { color: colors.text, fontSize: fontSizes.md }]}
+          <HighlightedInlineText
+            text={note.title}
+            highlight={highlightQuery}
+            color={colors.text}
+            style={[styles.title, { fontSize: fontSizes.md }]}
             numberOfLines={1}
-          >
-            {note.title}
-          </Text>
+          />
         )}
         <View style={styles.badges}>
           {note.locked && <Ionicons name="lock-closed" size={14} color={colors.textMuted} />}
@@ -75,9 +79,15 @@ export function NoteCard({ note, viewMode, selected, selectionMode, onPress, onL
           Contenido protegido
         </Text>
       ) : note.type === 'checklist' ? (
-        <ChecklistPreview note={note} textColor={colors.text} mutedColor={colors.textMuted} />
+        <ChecklistPreview note={note} textColor={colors.text} mutedColor={colors.textMuted} highlightQuery={highlightQuery} />
       ) : (
-        <FormattedText content={note.content} color={colors.textSecondary} fontSize={fontSizes.sm} numberOfLines={4} />
+        <FormattedText
+          content={note.content}
+          color={colors.textSecondary}
+          fontSize={fontSizes.sm}
+          numberOfLines={4}
+          highlight={highlightQuery}
+        />
       )}
 
       <View style={styles.footerRow}>
@@ -101,14 +111,21 @@ function ChecklistPreview({
   note,
   textColor,
   mutedColor,
+  highlightQuery,
 }: {
   note: Note;
   textColor: string;
   mutedColor: string;
+  highlightQuery?: string;
 }) {
   const { fontSizes } = useAppTheme();
-  const items = note.checklist.slice(0, 4);
-  const remaining = note.checklist.length - items.length;
+  const maxItems = 4;
+  const matchIndex = highlightQuery
+    ? note.checklist.findIndex((i) => i.text.toLowerCase().includes(highlightQuery.toLowerCase()))
+    : -1;
+  const start = matchIndex > 0 ? Math.min(matchIndex, Math.max(note.checklist.length - maxItems, 0)) : 0;
+  const items = note.checklist.slice(start, start + maxItems);
+  const remaining = note.checklist.length - (start + items.length);
   return (
     <View>
       {items.map((item) => (
@@ -118,18 +135,18 @@ function ChecklistPreview({
             size={14}
             color={item.checked ? mutedColor : textColor}
           />
-          <Text
+          <HighlightedInlineText
+            text={item.text || 'Elemento sin título'}
+            highlight={highlightQuery}
+            color={item.checked ? mutedColor : textColor}
             style={{
-              color: item.checked ? mutedColor : textColor,
               fontSize: fontSizes.sm,
               marginLeft: 6,
               textDecorationLine: item.checked ? 'line-through' : 'none',
               flexShrink: 1,
             }}
             numberOfLines={1}
-          >
-            {item.text || 'Elemento sin título'}
-          </Text>
+          />
         </View>
       ))}
       {remaining > 0 && (

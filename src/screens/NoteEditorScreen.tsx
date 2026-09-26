@@ -26,7 +26,7 @@ import { RootStackParamList } from '@/navigation/types';
 import { ChecklistItem, Note, ReminderRepeat } from '@/types';
 import { NOTE_COLORS, getNoteColorHex } from '@/constants/noteColors';
 import { generateId } from '@/utils/id';
-import { prefixLines, stripFormatting, wrapSelection } from '@/utils/richText';
+import { findMatchRange, numberLines, prefixLines, stripFormatting, wrapSelection } from '@/utils/richText';
 import { formatFullDateTime } from '@/utils/dateUtils';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
@@ -56,6 +56,9 @@ export function NoteEditorScreen() {
   const initialEmptyRef = useRef(
     storeNote ? isNoteEmpty(storeNote) : true
   );
+  const contentInputRef = useRef<TextInput>(null);
+  const checklistInputRefs = useRef(new Map<string, TextInput>());
+  const jumpedToSearchRef = useRef(false);
 
   useEffect(() => {
     noteRef.current = note;
@@ -76,6 +79,34 @@ export function NoteEditorScreen() {
     }, 500);
     return () => clearTimeout(timeout);
   }, [note]);
+
+  useEffect(() => {
+    const searchQuery = route.params.searchQuery;
+    if (!note || !searchQuery || jumpedToSearchRef.current) return;
+    jumpedToSearchRef.current = true;
+
+    if (note.type === 'checklist') {
+      const item = note.checklist.find((i) => i.text.toLowerCase().includes(searchQuery.toLowerCase()));
+      if (!item) return;
+      setTimeout(() => {
+        const input = checklistInputRefs.current.get(item.id);
+        const range = findMatchRange(item.text, searchQuery);
+        input?.focus();
+        if (range) input?.setNativeProps({ selection: range });
+      }, 400);
+      return;
+    }
+
+    if (note.type === 'text') {
+      const range = findMatchRange(note.content, searchQuery);
+      if (!range) return;
+      setTimeout(() => {
+        contentInputRef.current?.focus();
+        contentInputRef.current?.setNativeProps({ selection: range });
+      }, 400);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [note?.id]);
 
   useEffect(() => {
     return () => {
@@ -102,20 +133,35 @@ export function NoteEditorScreen() {
   const bg = getNoteColorHex(note.color, isDark ? 'dark' : 'light');
   const category = categories.find((c) => c.id === note.categoryId);
 
-  const applyFormatting = (kind: 'bold' | 'italic' | 'bullet' | 'checkbox') => {
+  const applyFormatting = (
+    kind: 'bold' | 'italic' | 'underline' | 'strikethrough' | 'heading' | 'bullet' | 'numbered' | 'checkbox'
+  ) => {
     const { start, end } = selection;
-    if (kind === 'bold') {
-      const r = wrapSelection(note.content, start, end, '**');
-      update({ content: r.text });
-    } else if (kind === 'italic') {
-      const r = wrapSelection(note.content, start, end, '*');
-      update({ content: r.text });
-    } else if (kind === 'bullet') {
-      const r = prefixLines(note.content, start, end, '- ');
-      update({ content: r.text });
-    } else {
-      const r = prefixLines(note.content, start, end, '☐ ');
-      update({ content: r.text });
+    switch (kind) {
+      case 'bold':
+        update({ content: wrapSelection(note.content, start, end, '**').text });
+        break;
+      case 'italic':
+        update({ content: wrapSelection(note.content, start, end, '*').text });
+        break;
+      case 'underline':
+        update({ content: wrapSelection(note.content, start, end, '__').text });
+        break;
+      case 'strikethrough':
+        update({ content: wrapSelection(note.content, start, end, '~~').text });
+        break;
+      case 'heading':
+        update({ content: prefixLines(note.content, start, end, '# ').text });
+        break;
+      case 'bullet':
+        update({ content: prefixLines(note.content, start, end, '- ').text });
+        break;
+      case 'numbered':
+        update({ content: numberLines(note.content, start, end).text });
+        break;
+      case 'checkbox':
+        update({ content: prefixLines(note.content, start, end, '☐ ').text });
+        break;
     }
   };
 
@@ -251,6 +297,10 @@ export function NoteEditorScreen() {
                     />
                   </Pressable>
                   <TextInput
+                    ref={(r) => {
+                      if (r) checklistInputRefs.current.set(item.id, r);
+                      else checklistInputRefs.current.delete(item.id);
+                    }}
                     value={item.text}
                     onChangeText={(text) => updateChecklistItem(item.id, { text })}
                     placeholder="Elemento"
@@ -276,6 +326,7 @@ export function NoteEditorScreen() {
             </View>
           ) : (
             <TextInput
+              ref={contentInputRef}
               value={note.content}
               onChangeText={(content) => update({ content })}
               onSelectionChange={(e) => setSelection(e.nativeEvent.selection)}
@@ -309,13 +360,24 @@ export function NoteEditorScreen() {
         </ScrollView>
 
         {!note.locked && note.type === 'text' && (
-          <View style={[styles.toolbar, { backgroundColor: colors.surfaceElevated, borderTopColor: colors.border }]}>
-            <ToolbarButton icon="text" onPress={() => applyFormatting('bold')} label="B" bold />
-            <ToolbarButton icon="text" onPress={() => applyFormatting('italic')} label="I" italic />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={[styles.toolbar, { backgroundColor: colors.surfaceElevated, borderTopColor: colors.border }]}
+            contentContainerStyle={styles.toolbarContent}
+          >
+            <ToolbarButton onPress={() => applyFormatting('bold')} label="B" bold />
+            <ToolbarButton onPress={() => applyFormatting('italic')} label="I" italic />
+            <ToolbarButton onPress={() => applyFormatting('underline')} label="U" underline />
+            <ToolbarButton onPress={() => applyFormatting('strikethrough')} label="S" strikethrough />
+            <ToolbarDivider />
+            <ToolbarButton icon="text" onPress={() => applyFormatting('heading')} />
             <ToolbarButton icon="list" onPress={() => applyFormatting('bullet')} />
+            <ToolbarButton icon="reorder-four" onPress={() => applyFormatting('numbered')} />
             <ToolbarButton icon="checkbox-outline" onPress={() => applyFormatting('checkbox')} />
+            <ToolbarDivider />
             <ToolbarButton icon="color-palette-outline" onPress={() => setColorPickerOpen(true)} />
-          </View>
+          </ScrollView>
         )}
         {(note.type === 'checklist' || note.locked) && (
           <View style={[styles.toolbar, { backgroundColor: colors.surfaceElevated, borderTopColor: colors.border }]}>
@@ -370,18 +432,32 @@ function ToolbarButton({
   label,
   bold,
   italic,
+  underline,
+  strikethrough,
 }: {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon?: keyof typeof Ionicons.glyphMap;
   onPress: () => void;
   label?: string;
   bold?: boolean;
   italic?: boolean;
+  underline?: boolean;
+  strikethrough?: boolean;
 }) {
   const { colors, fontSizes } = useAppTheme();
   if (label) {
+    const textDecorationLine =
+      underline && strikethrough ? 'underline line-through' : underline ? 'underline' : strikethrough ? 'line-through' : 'none';
     return (
       <Pressable style={styles.toolbarButton} onPress={onPress}>
-        <Text style={{ color: colors.text, fontSize: fontSizes.md, fontWeight: bold ? '800' : '600', fontStyle: italic ? 'italic' : 'normal' }}>
+        <Text
+          style={{
+            color: colors.text,
+            fontSize: fontSizes.md,
+            fontWeight: bold ? '800' : '600',
+            fontStyle: italic ? 'italic' : 'normal',
+            textDecorationLine,
+          }}
+        >
           {label}
         </Text>
       </Pressable>
@@ -389,9 +465,14 @@ function ToolbarButton({
   }
   return (
     <Pressable style={styles.toolbarButton} onPress={onPress}>
-      <Ionicons name={icon} size={20} color={colors.text} />
+      <Ionicons name={icon ?? 'ellipse'} size={20} color={colors.text} />
     </Pressable>
   );
+}
+
+function ToolbarDivider() {
+  const { colors } = useAppTheme();
+  return <View style={[styles.toolbarDivider, { backgroundColor: colors.border }]} />;
 }
 
 function ColorPickerModal({
@@ -639,14 +720,24 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   toolbar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 10,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
+  toolbarContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+  },
   toolbarButton: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     paddingVertical: 6,
+    minWidth: 40,
+    alignItems: 'center',
+  },
+  toolbarDivider: {
+    width: StyleSheet.hairlineWidth,
+    height: 24,
+    marginHorizontal: 4,
   },
   backdrop: {
     flex: 1,

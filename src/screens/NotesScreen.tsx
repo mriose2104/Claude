@@ -64,6 +64,7 @@ export function NotesScreen() {
         emptyIcon="search"
         emptyTitle={query ? 'Sin resultados' : 'No hay notas aquí'}
         emptySubtitle={query ? 'Intenta con otro término de búsqueda' : 'Crea una nota nueva con el botón +'}
+        searchQuery={query}
       />
 
       <FAB onPress={openSheet} />

@@ -8,11 +8,11 @@ export function useOpenNote() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const requestUnlock = useNoteUnlock();
 
-  return async function openNote(note: Note) {
+  return async function openNote(note: Note, searchQuery?: string) {
     if (note.locked) {
       const ok = await requestUnlock();
       if (!ok) return;
     }
-    navigation.navigate('NoteEditor', { noteId: note.id });
+    navigation.navigate('NoteEditor', { noteId: note.id, searchQuery: searchQuery || undefined });
   };
 }

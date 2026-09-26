@@ -20,9 +20,11 @@ interface Props {
   emptyIcon: React.ComponentProps<typeof EmptyState>['icon'];
   emptyTitle: string;
   emptySubtitle?: string;
+  /** Active search term: highlights matches in previews and is carried into the editor to jump to the hit. */
+  searchQuery?: string;
 }
 
-export function NotesGrid({ notes, viewMode, mode, emptyIcon, emptyTitle, emptySubtitle }: Props) {
+export function NotesGrid({ notes, viewMode, mode, emptyIcon, emptyTitle, emptySubtitle, searchQuery }: Props) {
   const selectedIds = useNotesStore((s) => s.selectedIds);
   const toggleSelect = useNotesStore((s) => s.toggleSelect);
   const clearSelection = useNotesStore((s) => s.clearSelection);
@@ -41,7 +43,7 @@ export function NotesGrid({ notes, viewMode, mode, emptyIcon, emptyTitle, emptyS
       toggleSelect(note.id);
       return;
     }
-    openNote(note);
+    openNote(note, searchQuery);
   };
 
   const handleLongPress = (note: Note) => {
@@ -80,6 +82,7 @@ export function NotesGrid({ notes, viewMode, mode, emptyIcon, emptyTitle, emptyS
               selectionMode={selectionMode}
               onPress={() => handlePress(item)}
               onLongPress={() => handleLongPress(item)}
+              highlightQuery={searchQuery}
             />
           );
           if (viewMode !== 'list' || selectionMode) return card;

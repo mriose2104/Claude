@@ -30,6 +30,7 @@ export function TasksScreen() {
         emptyIcon="checkbox-outline"
         emptyTitle="Sin tareas pendientes"
         emptySubtitle="Crea una lista de tareas o checklist con el botón +"
+        searchQuery={query}
       />
       <FAB onPress={openSheet} />
       <CreateNoteSheet visible={sheetVisible} onClose={closeSheet} onSelect={handleSelect} />
