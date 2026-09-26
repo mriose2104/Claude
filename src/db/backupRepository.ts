@@ -1,6 +1,8 @@
+import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Category, Note } from '@/types';
 import { fetchAllNotes, replaceAllNotes, upsertNote } from '@/db/notesRepository';
 import { fetchAllCategories } from '@/db/categoriesRepository';
@@ -15,6 +17,7 @@ export interface BackupPayload {
 
 const BACKUP_DIR = FileSystem.documentDirectory + 'backups/';
 const LAST_BACKUP_FILE = BACKUP_DIR + 'last_backup.json';
+const DOWNLOAD_DIR_URI_KEY = 'notes_pro_download_dir_uri';
 
 async function ensureBackupDir(): Promise<void> {
   const info = await FileSystem.getInfoAsync(BACKUP_DIR);
@@ -28,12 +31,50 @@ export async function buildBackupPayload(): Promise<BackupPayload> {
   return { version: 1, exportedAt: Date.now(), notes, categories };
 }
 
-/** Writes a manual backup snapshot to app storage; used for local restore. */
-export async function createManualBackup(): Promise<string> {
+/**
+ * Writes a copy of the backup into a public, user-visible folder (normally
+ * "Descargas") via Android's Storage Access Framework, so the user can find
+ * and move the file themselves outside the app's private sandbox. The
+ * chosen folder is remembered so this only prompts once.
+ */
+async function saveCopyToDownloads(payload: BackupPayload): Promise<boolean> {
+  if (Platform.OS !== 'android') return false;
+  const SAF = FileSystem.StorageAccessFramework;
+
+  try {
+    let directoryUri = await AsyncStorage.getItem(DOWNLOAD_DIR_URI_KEY);
+    if (!directoryUri) {
+      const suggested = SAF.getUriForDirectoryInRoot('Download');
+      const permission = await SAF.requestDirectoryPermissionsAsync(suggested);
+      if (!permission.granted) return false;
+      directoryUri = permission.directoryUri;
+      await AsyncStorage.setItem(DOWNLOAD_DIR_URI_KEY, directoryUri);
+    }
+
+    const fileName = `notes-pro-backup-${new Date().toISOString().slice(0, 10)}`;
+    const fileUri = await SAF.createFileAsync(directoryUri, fileName, 'application/json');
+    await SAF.writeAsStringAsync(fileUri, JSON.stringify(payload, null, 2));
+    return true;
+  } catch {
+    // The chosen folder may have become invalid (e.g. permission revoked);
+    // fall back silently, the internal backup already succeeded.
+    await AsyncStorage.removeItem(DOWNLOAD_DIR_URI_KEY);
+    return false;
+  }
+}
+
+export interface ManualBackupResult {
+  internalPath: string;
+  savedToDownloads: boolean;
+}
+
+/** Writes a manual backup snapshot to app storage (for quick local restore) and, on Android, also to a public folder the user can browse. */
+export async function createManualBackup(): Promise<ManualBackupResult> {
   await ensureBackupDir();
   const payload = await buildBackupPayload();
   await FileSystem.writeAsStringAsync(LAST_BACKUP_FILE, JSON.stringify(payload, null, 2));
-  return LAST_BACKUP_FILE;
+  const savedToDownloads = await saveCopyToDownloads(payload);
+  return { internalPath: LAST_BACKUP_FILE, savedToDownloads };
 }
 
 export async function hasLocalBackup(): Promise<boolean> {

@@ -89,8 +89,13 @@ export function SettingsScreen() {
   const handleManualBackup = async () => {
     setBusy(true);
     try {
-      await createManualBackup();
-      Alert.alert('Copia de seguridad creada', 'Tus notas se guardaron localmente en el dispositivo.');
+      const result = await createManualBackup();
+      Alert.alert(
+        'Copia de seguridad creada',
+        result.savedToDownloads
+          ? 'Tus notas se guardaron en la app y también en una carpeta que elegiste (por ejemplo, Descargas).'
+          : 'Tus notas se guardaron dentro de la app. No se pudo guardar una copia adicional visible: puedes intentarlo de nuevo o usar "Exportar notas".'
+      );
     } catch (e) {
       Alert.alert('Error', 'No se pudo crear la copia de seguridad.');
     } finally {
