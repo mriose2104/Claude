@@ -452,7 +452,7 @@ function ToolbarButton({
         <Text
           style={{
             color: colors.text,
-            fontSize: fontSizes.md,
+            fontSize: fontSizes.sm,
             fontWeight: bold ? '800' : '600',
             fontStyle: italic ? 'italic' : 'normal',
             textDecorationLine,
@@ -465,7 +465,7 @@ function ToolbarButton({
   }
   return (
     <Pressable style={styles.toolbarButton} onPress={onPress}>
-      <Ionicons name={icon ?? 'ellipse'} size={20} color={colors.text} />
+      <Ionicons name={icon ?? 'ellipse'} size={17} color={colors.text} />
     </Pressable>
   );
 }
@@ -667,7 +667,7 @@ const styles = StyleSheet.create({
   },
   editorContent: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: 20,
   },
   titleInput: {
     fontWeight: '800',
@@ -683,7 +683,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   contentInput: {
-    minHeight: 200,
+    minHeight: 60,
     lineHeight: 22,
   },
   checklistContainer: {
@@ -725,19 +725,19 @@ const styles = StyleSheet.create({
   toolbarContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 6,
   },
   toolbarButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    minWidth: 40,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    minWidth: 32,
     alignItems: 'center',
   },
   toolbarDivider: {
     width: StyleSheet.hairlineWidth,
-    height: 24,
-    marginHorizontal: 4,
+    height: 18,
+    marginHorizontal: 2,
   },
   backdrop: {
     flex: 1,
