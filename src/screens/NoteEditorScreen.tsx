@@ -663,7 +663,8 @@ const styles = StyleSheet.create({
     marginLeft: 14,
   },
   editorArea: {
-    flex: 1,
+    flexGrow: 0,
+    flexShrink: 1,
   },
   editorContent: {
     padding: 20,
