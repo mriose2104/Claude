@@ -51,6 +51,7 @@ export function NoteEditorScreen() {
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
   const [reminderModalOpen, setReminderModalOpen] = useState(false);
+  const [formattingOpen, setFormattingOpen] = useState(false);
   const dirtyRef = useRef(false);
   const noteRef = useRef(note);
   const initialEmptyRef = useRef(
@@ -359,7 +360,7 @@ export function NoteEditorScreen() {
           </View>
         </ScrollView>
 
-        {!note.locked && note.type === 'text' && (
+        {!note.locked && note.type === 'text' && formattingOpen && (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -377,7 +378,19 @@ export function NoteEditorScreen() {
             <ToolbarButton icon="checkbox-outline" onPress={() => applyFormatting('checkbox')} />
             <ToolbarDivider />
             <ToolbarButton icon="color-palette-outline" onPress={() => setColorPickerOpen(true)} />
+            <ToolbarDivider />
+            <ToolbarButton icon="chevron-down" onPress={() => setFormattingOpen(false)} />
           </ScrollView>
+        )}
+        {!note.locked && note.type === 'text' && !formattingOpen && (
+          <Pressable
+            style={[styles.toolbarCollapsed, { backgroundColor: colors.surfaceElevated, borderTopColor: colors.border }]}
+            onPress={() => setFormattingOpen(true)}
+          >
+            <Ionicons name="text" size={15} color={colors.textMuted} />
+            <Text style={{ color: colors.textMuted, fontSize: fontSizes.xs, marginLeft: 6 }}>Formato</Text>
+            <Ionicons name="chevron-up" size={13} color={colors.textMuted} style={{ marginLeft: 4 }} />
+          </Pressable>
         )}
         {(note.type === 'checklist' || note.locked) && (
           <View style={[styles.toolbar, { backgroundColor: colors.surfaceElevated, borderTopColor: colors.border }]}>
@@ -663,8 +676,7 @@ const styles = StyleSheet.create({
     marginLeft: 14,
   },
   editorArea: {
-    flexGrow: 0,
-    flexShrink: 1,
+    flex: 1,
   },
   editorContent: {
     padding: 20,
@@ -739,6 +751,13 @@ const styles = StyleSheet.create({
     width: StyleSheet.hairlineWidth,
     height: 18,
     marginHorizontal: 2,
+  },
+  toolbarCollapsed: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
   backdrop: {
     flex: 1,
