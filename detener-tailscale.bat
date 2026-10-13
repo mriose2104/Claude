@@ -2,6 +2,14 @@
 setlocal
 title Detener Tailscale
 
+rem Pide permisos de administrador si no los tiene (necesarios para el servicio)
+net session >nul 2>&1
+if errorlevel 1 (
+    echo Solicitando permisos de administrador...
+    powershell -NoProfile -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
+    exit /b
+)
+
 set "TS=C:\Program Files\Tailscale\tailscale.exe"
 
 if not exist "%TS%" (
@@ -19,5 +27,14 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo Tailscale desconectado.
+echo Deteniendo el servicio de Tailscale...
+net stop Tailscale >nul 2>&1
+sc query Tailscale | find "STOPPED" >nul
+if errorlevel 1 (
+    echo [ERROR] No se pudo detener el servicio de Tailscale.
+    pause
+    exit /b 1
+)
+
+echo Tailscale desconectado y servicio detenido.
 pause
