@@ -37,4 +37,4 @@ if errorlevel 1 (
 )
 
 echo Tailscale desconectado y servicio detenido.
-pause
+exit /b 0

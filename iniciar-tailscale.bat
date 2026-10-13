@@ -39,8 +39,5 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo.
-"%TS%" status
-echo.
 echo Tailscale conectado.
-pause
+exit /b 0
