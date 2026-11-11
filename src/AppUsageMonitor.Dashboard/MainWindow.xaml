@@ -192,12 +192,14 @@
                             - Nombre del proceso (por ejemplo chrome.exe) y nombre visible de la aplicacion.&#x0a;
                             - Fecha y hora de inicio y de cierre de cada aplicacion.&#x0a;
                             - Duracion de uso ACTIVO: solo se cuenta el tiempo en que esa ventana estuvo en primer plano (con el foco), no el tiempo que paso simplemente abierta de fondo sin usarse.&#x0a;
-                            - Estado (abierto / cerrado) de cada sesion.
+                            - Estado (abierto / cerrado) de cada sesion.&#x0a;
+                            - Para los sitios web configurados (por ejemplo YouTube, Gmail, WhatsApp Web): mientras Chrome o Edge esta en primer plano, se consulta brevemente el historial local del navegador para saber SOLO el dominio visitado (ej. "youtube.com") y registrar su tiempo por separado.
                         </TextBlock>
                         <TextBlock Text="Informacion que este monitor NO registra" FontWeight="Bold" FontSize="15" Margin="0,0,0,8" />
                         <TextBlock TextWrapping="Wrap" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16">
                             - No registra contrasenas ni datos ingresados por teclado (no es un keylogger).&#x0a;
                             - No captura el contenido de las ventanas ni pantallazos.&#x0a;
+                            - De los sitios web, nunca guarda la URL completa, busquedas, correos, mensajes ni ninguna otra parte de la pagina: solo el nombre de dominio, y unicamente para los sitios que estan en la lista configurada.&#x0a;
                             - No envia informacion fuera de este equipo: todo se guarda en una base de datos local.
                         </TextBlock>
                         <TextBlock x:Name="RutaBaseDatosText" Text="Base de datos local: -" Foreground="{StaticResource TextSecondaryBrush}" />

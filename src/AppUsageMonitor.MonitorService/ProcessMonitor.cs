@@ -25,6 +25,13 @@ namespace AppUsageMonitor.MonitorService;
 /// No se inspecciona el titulo real de la ventana mas alla de comprobar
 /// que existe (para filtrar procesos sin interfaz), no se usan hooks de
 /// teclado ni se captura contenido de pantalla.
+///
+/// Para los sitios configurados en Monitoring:SitiosWeb (ej. YouTube,
+/// Gmail), cuando el navegador esta en primer plano se consulta su
+/// historial local solo para obtener el dominio actual (ver
+/// BrowserHistoryReader); nunca se guarda la URL completa ni el contenido
+/// de la pagina. Ese tiempo se registra ademas del tiempo normal del
+/// navegador como aplicacion, no en su lugar.
 /// </summary>
 [SupportedOSPlatform("windows")]
 public class ProcessMonitor
@@ -32,20 +39,31 @@ public class ProcessMonitor
     private readonly IUsageRepository _repository;
     private readonly ILogger<ProcessMonitor> _logger;
     private readonly MonitoringOptions _options;
+    private readonly BrowserHistoryReader _browserHistoryReader;
     private readonly Dictionary<int, ActiveSession> _active = new();
+    private SitioWebSession? _sitioWebActivo;
 
     public ProcessMonitor(IUsageRepository repository, ILogger<ProcessMonitor> logger, IOptions<MonitoringOptions> options)
     {
         _repository = repository;
         _logger = logger;
         _options = options.Value;
+        _browserHistoryReader = new BrowserHistoryReader(logger);
     }
 
     private sealed class ActiveSession
     {
         public required long RecordId { get; init; }
         public required string AppName { get; init; }
+        public required string ProcesoRaw { get; init; }
         public required DateTime StartedAt { get; init; }
+        public long ActivoSegundos { get; set; }
+    }
+
+    private sealed class SitioWebSession
+    {
+        public required long RecordId { get; init; }
+        public required string Etiqueta { get; init; }
         public long ActivoSegundos { get; set; }
     }
 
@@ -98,7 +116,11 @@ public class ProcessMonitor
     private void AcumularTiempoActivo()
     {
         var pidActivo = NativeMethods.GetForegroundProcessId();
-        if (pidActivo is not { } pid || !_active.TryGetValue(pid, out var sesion)) return;
+        if (pidActivo is not { } pid || !_active.TryGetValue(pid, out var sesion))
+        {
+            CerrarSitioWebActivo();
+            return;
+        }
 
         sesion.ActivoSegundos += _options.PollIntervalSeconds;
 
@@ -109,6 +131,82 @@ public class ProcessMonitor
         catch (Exception ex)
         {
             _logger.LogDebug(ex, "No se pudo actualizar el progreso de {App}", sesion.AppName);
+        }
+
+        AcumularSitioWeb(sesion.ProcesoRaw);
+    }
+
+    /// <summary>
+    /// Mientras el navegador (Chrome/Edge) esta en primer plano, revisa su
+    /// historial local para saber si el dominio actual esta en la lista de
+    /// sitios a rastrear y acumula tiempo para ese sitio por separado
+    /// (ademas del tiempo normal de "Google Chrome"/"Microsoft Edge").
+    /// </summary>
+    private void AcumularSitioWeb(string procesoRaw)
+    {
+        var etiqueta = _browserHistoryReader.GetSitioActivo(procesoRaw, _options.SitiosWeb);
+
+        if (etiqueta is null)
+        {
+            CerrarSitioWebActivo();
+            return;
+        }
+
+        if (_sitioWebActivo is null || _sitioWebActivo.Etiqueta != etiqueta)
+        {
+            CerrarSitioWebActivo();
+
+            var ahora = DateTime.Now;
+            var record = new UsageRecord
+            {
+                Usuario = Environment.UserName,
+                Proceso = procesoRaw + ".exe",
+                Aplicacion = etiqueta,
+                Fecha = DateOnly.FromDateTime(ahora),
+                Inicio = ahora,
+                Estado = "Abierto",
+            };
+
+            try
+            {
+                var id = _repository.InsertOpenSession(record);
+                _sitioWebActivo = new SitioWebSession { RecordId = id, Etiqueta = etiqueta };
+                _logger.LogInformation("Inicio sitio web: {Sitio}", etiqueta);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "No se pudo guardar el inicio del sitio {Sitio}", etiqueta);
+                return;
+            }
+        }
+
+        _sitioWebActivo.ActivoSegundos += _options.PollIntervalSeconds;
+
+        try
+        {
+            _repository.UpdateProgress(_sitioWebActivo.RecordId, _sitioWebActivo.ActivoSegundos);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "No se pudo actualizar el progreso del sitio {Sitio}", _sitioWebActivo.Etiqueta);
+        }
+    }
+
+    private void CerrarSitioWebActivo()
+    {
+        if (_sitioWebActivo is null) return;
+
+        var sitio = _sitioWebActivo;
+        _sitioWebActivo = null;
+
+        try
+        {
+            _repository.CloseSession(sitio.RecordId, DateTime.Now, sitio.ActivoSegundos);
+            _logger.LogInformation("Cierre sitio web: {Sitio} duracion {Duracion}", sitio.Etiqueta, FormatMinutos(sitio.ActivoSegundos));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "No se pudo guardar el cierre del sitio {Sitio}", sitio.Etiqueta);
         }
     }
 
@@ -158,6 +256,7 @@ public class ProcessMonitor
         {
             RecordId = id,
             AppName = appName,
+            ProcesoRaw = process.ProcessName,
             StartedAt = now,
         };
 
@@ -200,6 +299,8 @@ public class ProcessMonitor
         {
             RegisterStop(pid);
         }
+
+        CerrarSitioWebActivo();
     }
 
     private static string GetFriendlyAppName(Process process)

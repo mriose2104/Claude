@@ -83,6 +83,26 @@ acumulado (que se va guardando en la base de datos mientras la sesion
 sigue abierta, no solo al cerrarla). Una aplicacion abierta de fondo sin
 usarse no suma tiempo; solo cuenta mientras realmente esta en uso.
 
+### Sitios web especificos (YouTube, Gmail, WhatsApp Web, etc.)
+
+Configurable en `appsettings.json` del monitor, clave `Monitoring:SitiosWeb`
+(dominio -> nombre a mostrar). Mientras Chrome o Edge estan en primer
+plano, el monitor copia y consulta brevemente el archivo `History` local
+del navegador (el mismo que ya guarda en el disco) solo para leer el
+dominio de la pagina visitada mas recientemente; si ese dominio esta en la
+lista, se registra una fila separada con ese nombre (ej. "YouTube"),
+ademas de la fila normal de "Google Chrome". Nunca se guarda la URL
+completa, el titulo de la pagina ni ninguna otra parte del historial.
+
+Limitaciones a tener en cuenta:
+- Solo Chrome y Edge (perfil "Default"); no Firefox.
+- El historial solo se actualiza al navegar a una pagina nueva, no al
+  cambiar entre pestañas ya cargadas sin recargar, asi que con varias
+  pestañas abiertas puede quedar desactualizado respecto a cual se ve en
+  pantalla en ese momento.
+- Para agregar otro sitio, basta con agregar su dominio en
+  `Monitoring:SitiosWeb` del `appsettings.json` publicado.
+
 ## Base de datos
 
 SQLite en `%ProgramData%\AppUsageMonitor\usage.db`, compartida entre el
